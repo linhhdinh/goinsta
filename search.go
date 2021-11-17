@@ -493,3 +493,28 @@ func (search *Search) history() (*[]SearchHistory, error) {
 	}
 	return &s.Recent, nil
 }
+
+func (sb *Search) FastSearchUser(query string) (*SearchResult, error) {
+	return sb.fastSearch(query, sb.user)
+}
+
+func (sb *Search) FastSearchHashtag(query string) (*SearchResult, error) {
+	return sb.fastSearch(query, sb.tags)
+}
+
+func (sb *Search) fastSearch(query string, fn func(string) (*SearchResult, error)) (*SearchResult, error) {
+	result, err := fn(query)
+	if err != nil {
+		return nil, err
+	}
+	// If the query is a username, and in the top 10, return
+	if len(result.Results) >= 10 {
+		for _, r := range result.Results[:10] {
+			if r.User != nil && r.User.Username == query {
+				return result, nil
+			}
+		}
+	}
+
+	return result, nil
+}
